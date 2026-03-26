@@ -11,7 +11,7 @@ COPY requirements.txt /requirements.txt
 RUN python${PYTHON_VERSION%.*} -m pip install --no-cache-dir pip \
  && python${PYTHON_VERSION%.*} -m pip install --no-cache-dir -r /requirements.txt
 
-# Our requirements use protobuf 5 but for the object 
+# Our requirements use protobuf 5 but for the object
 # that connects soda-core with Clichkouse, we need protobuf 3
 RUN python${PYTHON_VERSION%.*} -m venv /opt/soda-venv \
  && /opt/soda-venv/bin/pip install --no-cache-dir pip \
