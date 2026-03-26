@@ -9,29 +9,37 @@ import json
 import pandas as pd
 
 def download_data(**context):
-    # Скачиваем данные
     data = yf.download("AAPL", start=context['data_interval_start'], end=context['data_interval_end'])
 
     if data.empty:
-        print(f"Данных за {context['ds']} нет. Пропускаем.")
         raise AirflowSkipException(f"No data for {context['ds']}")
 
-    df = data.copy()  #  Обработка данных, если они есть
 
-    if isinstance(df.columns, pd.MultiIndex): # Исправляем MultiIndex, если он есть
-        df.columns = df.columns.get_level_values(0)
+    if isinstance(data.columns, pd.MultiIndex):
+        data.columns = data.columns.get_level_values(0)
 
-    df = df.reset_index() # Подготовка данных: сбрасываем индекс, чтобы Date стала колонкой
+    data = data.reset_index()
 
-    records = df.to_dict(orient='records') # Превращаем типы данных Pandas/Numpy в стандартные типы Python
+    data.columns = [col.lower().replace(' ', '_') for col in data.columns]
 
-    hook = PostgresHook(postgres_conn_id='my_postgres') # Подключаемся к Postgres
+    hook = PostgresHook(postgres_conn_id='my_postgres')
 
-    for row in records: # Загрузка в Postgres
-        json_row = json.dumps(row, default=str)
-        insert_sql = "INSERT INTO stock_json_table (data) VALUES (%s)"
-        hook.run(insert_sql, parameters=(json_row,))
+    for _, row in data.iterrows():
+        insert_sql = """
+              INSERT INTO stock_data_table_yfinance (date, open, high, low, close, adj_close, volume)
+              VALUES (%s, %s, %s, %s, %s, %s, %s)
+          """
 
+        params = (
+            str(row['date']),
+            row['open'],
+            row['high'],
+            row['low'],
+            row['close'],
+            row.get('adj_close', row['close']),
+            row['volume']
+        )
+        hook.run(insert_sql, parameters=params)
 
 with DAG(
         dag_id="my_dag",
