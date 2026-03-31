@@ -14,7 +14,6 @@ def download_data(**context):
     if data.empty:
         raise AirflowSkipException(f"No data for {context['ds']}")
 
-
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.get_level_values(0)
 
