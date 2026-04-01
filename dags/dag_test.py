@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow_clickhouse_plugin.hooks.clickhouse import ClickHouseHook
+from airflow_clickhouse_plugin.operators.clickhouse import ClickHouseOperator
 from datetime import datetime
 
 
@@ -29,3 +30,14 @@ with DAG(
         task_id="test_hook_connection",
         python_callable=run_query_via_hook
     )
+
+    transfer_to_ch = ClickHouseOperator(
+        task_id="transfer_from_pg_to_ch",
+        clickhouse_conn_id="clickhouse",
+        sql="""
+            INSERT INTO clickhouse.stock_data_final
+            SELECT * FROM default.pg_data_yfinance
+            """
+    )
+
+    task_run_hook >> transfer_to_ch
