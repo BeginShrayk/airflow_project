@@ -25,6 +25,11 @@ with DAG(
         task_id="transfer_step",
         python_callable=lambda **kwargs: manager.transfer_to_clickhouse(kwargs['ds'])
     )
+    optimize_ch = PythonOperator(
+        task_id="optimize_clickhouse",
+        python_callable=lambda: manager.optimize_table(),
+        trigger_rule = "all_done"
+    )
 
-    download_psql >> transfer_to_ch
+    download_psql >> transfer_to_ch >> optimize_ch
 
