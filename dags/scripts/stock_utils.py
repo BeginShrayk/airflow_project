@@ -45,6 +45,10 @@ class DataManager:
         sql = f"""
             INSERT INTO clickhouse.stock_data_final
             SELECT * FROM default.pg_data_yfinance
+            WHERE toDate(date) = '{execution_date}'
         """
         self.ch_hook.execute(sql)
+
+    def optimize_table(self):
+        self.ch_hook.execute("OPTIMIZE TABLE clickhouse.stock_data_final FINAL")
 
